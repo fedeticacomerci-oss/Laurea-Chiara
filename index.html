@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dott.ssa [NOME] — Referto di Laurea</title>
+
+<style>
+  /* ============================================================
+     TOKEN DI SISTEMA
+     Sfondo: blu notte viscerale / antracite
+     Neon 1 (vitale):  #00f2fe  ciano chirurgico
+     Neon 2 (allarme):  #ff2a5f  rosso/viola bio-luminescente
+     Type: display condensata "clinica" + mono per dati/referto
+  ============================================================ */
+  :root{
+    --bg-0:#0a0d14;
+    --bg-1:#0d0f12;
+    --bg-2:#0f1420;
+    --cyan:#00f2fe;
+    --cyan-dim:#0aa8b8;
+    --red:#ff2a5f;
+    --red-dim:#a8103f;
+    --paper:#e8f3f4;
+    --line:rgba(0,242,254,0.18);
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0;
+    background: radial-gradient(120% 90% at 50% 0%, var(--bg-2) 0%, var(--bg-0) 55%, #060709 100%);
+    color:var(--paper);
+    font-family:"Courier New", ui-monospace, SFMono-Regular, Menlo, monospace;
+    /* NB: NON mettere overflow-x:hidden qui. È una nota trappola CSS:
+       fa sì che il browser converta implicitamente overflow-y in
+       "auto", trasformando <body> in un contenitore di scroll a sé
+       stante e ROMPENDO position:sticky in tutta la pagina (il DNA
+       smette di restare fisso). Il layout è già contenuto entro
+       100vw tramite le unità vw nei padding, quindi non serve. */
+    /* NB: scroll-behavior:smooth è stato rimosso di proposito.
+       Interferisce con le animazioni "scrub" legate allo scroll
+       (il DNA, ScrollTrigger) causando blocchi e ritardi imprevedibili
+       durante lo scroll reale, soprattutto su mobile con inerzia. */
+    width:100%;
+  }
+
+  @font-face{
+    /* fallback stack only — nessun caricamento esterno necessario */
+  }
+
+  h1,h2,h3{
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-weight:800;
+    letter-spacing:-0.02em;
+    margin:0;
+  }
+
+  .eyebrow{
+    font-family:"Courier New", monospace;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    font-size:11px;
+    color:var(--cyan-dim);
+  }
+
+  /* ---------- NEON HELPERS ---------- */
+  .neon-cyan-text{
+    color:#eafffe;
+    text-shadow:
+      0 0 4px rgba(0,242,254,.9),
+      0 0 14px rgba(0,242,254,.7),
+      0 0 34px rgba(0,242,254,.45),
+      0 0 70px rgba(0,242,254,.25);
+  }
+  .neon-red-text{
+    color:#ffe8ee;
+    text-shadow:
+      0 0 4px rgba(255,42,95,.95),
+      0 0 14px rgba(255,42,95,.75),
+      0 0 34px rgba(255,42,95,.45),
+      0 0 70px rgba(255,42,95,.25);
+  }
+  .neon-border-cyan{
+    border:1px solid rgba(0,242,254,.55);
+    box-shadow:
+      0 0 6px rgba(0,242,254,.35) inset,
+      0 0 18px rgba(0,242,254,.25),
+      0 0 42px rgba(0,242,254,.12);
+  }
+  .neon-border-red{
+    border:1px solid rgba(255,42,95,.6);
+    box-shadow:
+      0 0 6px rgba(255,42,95,.35) inset,
+      0 0 18px rgba(255,42,95,.25),
+      0 0 42px rgba(255,42,95,.12);
+  }
+
+  @keyframes pulseGlow{
+    0%,100%{ opacity:1; filter:brightness(1); }
+    50%{ opacity:.86; filter:brightness(1.18); }
+  }
+  @keyframes flicker{
+    0%,97%,100%{ opacity:1; }
+    98%{ opacity:.4; }
+    99%{ opacity:.9; }
+  }
+
+  section{ position:relative; width:100%; }
+
+  /* ============================================================
+     HERO — L'ANAMNESI
+  ============================================================ */
+  #hero{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    padding:8vh 6vw 10vh;
+    text-align:center;
+    overflow:hidden;
+  }
+  #ecg-canvas{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    opacity:.55;
+    z-index:0;
+  }
+  .hero-inner{ position:relative; z-index:2; max-width:640px; }
+  .hero-inner .eyebrow{ display:block; margin-bottom:22px; animation:flicker 5s infinite; }
+  .hero-title{
+    font-size:clamp(30px, 8vw, 54px);
+    line-height:1.12;
+    animation:pulseGlow 3.4s ease-in-out infinite;
+  }
+  .hero-title .highlight{
+    display:block;
+    margin-top:10px;
+    font-size:clamp(34px, 10vw, 62px);
+    color:#fff;
+  }
+  .hero-photo-box{
+    margin:28px auto 0;
+    width:min(230px, 58vw);
+    aspect-ratio:1/1;
+    border-radius:10px;
+    background-color:#05070a;
+    /* Due livelli: la foto (contain, non ritaglia la sagoma) sopra
+       un bagliore radiale ciano che fa "emergere dal buio" i bordi
+       trasparenti di un eventuale PNG senza sfondo. */
+    background-image:
+      var(--hero-photo, none),
+      radial-gradient(60% 60% at 50% 42%, rgba(0,242,254,.16), rgba(5,7,10,0) 72%);
+    background-repeat:no-repeat, no-repeat;
+    background-position:center, center;
+    background-size:contain, cover;
+    filter:drop-shadow(0 0 14px rgba(0,242,254,.18));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    font-size:10.5px;
+    letter-spacing:.05em;
+    color:rgba(0,242,254,.6);
+    border:1px dashed rgba(0,242,254,.55);
+    padding:12px;
+    box-shadow:
+      0 0 6px rgba(0,242,254,.25) inset,
+      0 0 22px rgba(0,242,254,.22),
+      0 0 55px rgba(0,242,254,.1);
+  }
+
+  .hero-sub{
+    margin-top:26px;
+    font-family:"Courier New", monospace;
+    font-size:13px;
+    letter-spacing:.06em;
+    color:#7fdfe8;
+    opacity:.85;
+  }
+  .scroll-cue{
+    margin-top:56px;
+    font-size:11px;
+    letter-spacing:.3em;
+    text-transform:uppercase;
+    color:var(--cyan-dim);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+  }
+  .scroll-cue .line{
+    width:1px; height:34px;
+    background:linear-gradient(to bottom, var(--cyan), transparent);
+    animation:pulseGlow 1.8s infinite;
+  }
+
+  /* HUD parametri vitali — il pallino "batte" realmente a ritmo
+     di cuore, sincronizzato in JS con l'onda R dell'ECG (80 bpm) */
+  .vitals-hud{
+    position:absolute;
+    top:18px; left:18px;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:11px;
+    letter-spacing:.05em;
+    color:#7fdfe8;
+    opacity:.9;
+  }
+  .vitals-hud strong{ color:#eafffe; font-weight:700; }
+  .vitals-hud .vital-sep{ opacity:.35; }
+  .vitals-hud .dot{
+    width:8px; height:8px;
+    border-radius:50%;
+    background:var(--cyan);
+    box-shadow:0 0 6px var(--cyan), 0 0 12px rgba(0,242,254,.7);
+    display:inline-block;
+    transform:scale(1);
+    transition:transform .1s ease-out, box-shadow .1s ease-out;
+  }
+  .vitals-hud .dot.beat{
+    transform:scale(1.7);
+    box-shadow:0 0 14px var(--cyan), 0 0 32px rgba(0,242,254,.9);
+  }
+
+  /* ============================================================
+     SEZIONE DNA — IL NOSTRO LEGAME
+     Tecnica corretta: due livelli sovrapposti nella STESSA cella
+     di una griglia CSS. Il canvas è "sticky" e resta fisso;
+     il livello di testo scorre nel flusso normale del documento
+     e definisce l'altezza reale (e quindi la durata) della sezione.
+     Questo evita sia le sovrapposizioni sia la sezione "troppo corta".
+  ============================================================ */
+  #dna-section{
+    position:relative;
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #dna-sticky{
+    grid-area:1 / 1;
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:100vh;
+    width:100%;
+    overflow:hidden;
+    z-index:1;
+  }
+  #dna-canvas-wrap{
+    position:absolute;
+    inset:0;
+  }
+  #dna-canvas-wrap canvas{ display:block; }
+
+  .dna-vignette{
+    position:absolute; inset:0;
+    background:
+      radial-gradient(60% 45% at 50% 50%, rgba(0,0,0,0) 0%, rgba(10,13,20,.55) 72%, var(--bg-0) 100%);
+    pointer-events:none;
+    z-index:2;
+  }
+
+  .dna-heading{
+    position:absolute;
+    top:6%;
+    left:0; right:0;
+    text-align:center;
+    z-index:3;
+    padding:0 8vw;
+    pointer-events:none;
+    transition:opacity .4s ease;
+  }
+  .dna-heading .eyebrow{ margin-bottom:10px; }
+  .dna-heading h2{
+    font-size:clamp(20px,5.4vw,30px);
+    color:#eafffe;
+    text-shadow:0 0 18px rgba(0,242,254,.4);
+  }
+
+  #dna-text-layer{
+    grid-area:1 / 1;
+    position:relative;
+    z-index:3;
+    pointer-events:none;
+  }
+  .dna-slot{
+    min-height:118vh;
+    width:100%;
+    display:flex;
+    align-items:center;
+    padding:0 7vw;
+  }
+  .dna-slot.spacer{ min-height:58vh; }
+  .dna-slot[data-align="left"]{ justify-content:flex-start; }
+  .dna-slot[data-align="right"]{ justify-content:flex-end; }
+
+  .point-card{
+    pointer-events:auto;
+    max-width:420px;
+    width:100%;
+    padding:22px 22px 24px;
+    border-radius:2px;
+    background:rgba(10,13,20,.5);
+    backdrop-filter:blur(6px);
+    border:1px solid rgba(0,242,254,.14);
+    box-shadow:0 0 0 rgba(0,0,0,0);
+    opacity:.28;
+    transform:translateY(14px) scale(.97);
+    transition: opacity .5s ease, transform .5s ease, border-color .5s ease, box-shadow .5s ease;
+  }
+  .point-card.active{
+    opacity:1;
+    transform:translateY(0) scale(1);
+    border-color:rgba(0,242,254,.65);
+    box-shadow:
+      0 0 6px rgba(0,242,254,.35) inset,
+      0 0 24px rgba(0,242,254,.3),
+      0 0 60px rgba(0,242,254,.15);
+  }
+  .point-card .num{
+    font-size:11px;
+    letter-spacing:.3em;
+    color:var(--red);
+    text-shadow:0 0 10px rgba(255,42,95,.6);
+  }
+  .point-card h3{
+    margin-top:8px;
+    font-size:clamp(19px,4.4vw,24px);
+    color:#fff;
+  }
+  .point-card.active h3{
+    text-shadow:0 0 14px rgba(0,242,254,.55);
+  }
+  .point-card p.aneddoto{
+    margin-top:10px;
+    font-family:"Courier New", monospace;
+    font-size:13.5px;
+    line-height:1.6;
+    color:#bfe9ec;
+    opacity:.9;
+  }
+  .photo-box{
+    margin-top:16px;
+    width:100%;
+    aspect-ratio:4/3;
+    border-radius:2px;
+    background:#05070a center/cover no-repeat;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    font-size:11px;
+    letter-spacing:.05em;
+    color:rgba(0,242,254,.55);
+    border:1px dashed rgba(0,242,254,.4);
+    padding:10px;
+  }
+  .point-card.active .photo-box{
+    border-style:solid;
+    box-shadow:0 0 22px rgba(0,242,254,.28);
+  }
+
+  /* ============================================================
+     SEZIONE FINALE — LA PRESCRIZIONE
+  ============================================================ */
+  #prescrizione{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:14vh 6vw 16vh;
+  }
+  .rx-sheet{
+    position:relative;
+    width:100%;
+    max-width:480px;
+    padding:34px 26px 40px;
+    border-radius:3px;
+    background:
+      linear-gradient(180deg, rgba(0,242,254,.04), rgba(0,0,0,0) 30%),
+      #0b0e13;
+    border:1px solid rgba(0,242,254,.25);
+    box-shadow:
+      0 0 40px rgba(0,242,254,.08),
+      0 0 120px rgba(0,242,254,.05),
+      0 20px 60px rgba(0,0,0,.6);
+  }
+  .rx-sheet::before{
+    content:"";
+    position:absolute; inset:14px;
+    border:1px solid rgba(0,242,254,.12);
+    pointer-events:none;
+  }
+  .rx-head{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    border-bottom:1px dashed rgba(0,242,254,.25);
+    padding-bottom:14px; margin-bottom:18px;
+  }
+  .rx-head .eyebrow{ margin-bottom:4px; }
+  .rx-head .rx-id{ font-size:11px; color:#5fb9c2; text-align:right; }
+  .rx-title{
+    font-family:"Helvetica Neue", Arial, sans-serif;
+    font-size:22px; font-weight:800; color:#eafffe;
+    text-shadow:0 0 16px rgba(0,242,254,.35);
+  }
+  .rx-body p{
+    font-size:13px; line-height:1.9; color:#cfeff1; margin:0 0 10px;
+  }
+  .rx-line{
+    display:flex; justify-content:space-between; gap:14px;
+    font-size:12.5px; padding:7px 0;
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .rx-line span:first-child{ color:#7fb8bd; }
+  .rx-line span:last-child{ color:#eafffe; }
+
+  .stamp-zone{
+    margin-top:26px;
+    display:flex;
+    justify-content:center;
+  }
+  .stamp-btn{
+    width:168px; height:168px;
+    border-radius:50%;
+    border:3px solid var(--red);
+    background:radial-gradient(circle at 50% 40%, rgba(255,42,95,.16), rgba(10,3,6,.9));
+    color:#ffe3ea;
+    font-family:"Helvetica Neue", Arial, sans-serif;
+    font-weight:800;
+    font-size:12.5px;
+    line-height:1.35;
+    letter-spacing:.02em;
+    text-transform:uppercase;
+    cursor:pointer;
+    transform:rotate(-8deg);
+    box-shadow:
+      0 0 10px rgba(255,42,95,.5) inset,
+      0 0 30px rgba(255,42,95,.45),
+      0 0 70px rgba(255,42,95,.25);
+    animation:pulseGlow 2.6s infinite;
+    transition:opacity .6s ease, transform .6s ease;
+    padding:14px;
+  }
+  .stamp-btn:active{ transform:rotate(-8deg) scale(.95); }
+  .stamp-btn.hidden{
+    opacity:0;
+    transform:rotate(-8deg) scale(.4);
+    pointer-events:none;
+  }
+
+  .reveal-zone{
+    margin-top:26px;
+    opacity:0;
+    max-height:0;
+    overflow:hidden;
+    transition:opacity .7s ease .1s, max-height .8s ease;
+  }
+  .reveal-zone.show{
+    opacity:1;
+    max-height:2000px;
+  }
+  .reveal-title{
+    font-size:clamp(20px,5.5vw,26px);
+    color:#fff;
+    text-shadow:0 0 16px rgba(0,242,254,.5);
+    margin-bottom:8px;
+  }
+  .reveal-sub{
+    font-size:13px; color:#bfe9ec; line-height:1.7; margin-bottom:20px;
+  }
+
+  .cal-wrap{
+    border:1px solid rgba(0,242,254,.28);
+    border-radius:2px;
+    padding:16px;
+    background:rgba(0,242,254,.03);
+  }
+  .cal-header{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:13px; letter-spacing:.06em; margin-bottom:12px; color:#eafffe;
+  }
+  .cal-header button{
+    background:none; border:1px solid rgba(0,242,254,.35);
+    color:var(--cyan); width:28px; height:28px; border-radius:2px;
+    cursor:pointer; font-size:14px;
+  }
+  .cal-grid{
+    display:grid; grid-template-columns:repeat(7,1fr);
+    gap:5px; font-size:11px;
+  }
+  .cal-grid .dow{ text-align:center; color:#5fb9c2; padding-bottom:4px; }
+  .cal-day{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border-radius:2px; color:#cfeff1; cursor:pointer;
+    border:1px solid transparent;
+    font-size:12px;
+  }
+  .cal-day.empty{ visibility:hidden; cursor:default; }
+  .cal-day:hover{ border-color:rgba(0,242,254,.4); }
+  .cal-day.selected{
+    background:rgba(0,242,254,.14);
+    border-color:var(--cyan);
+    color:#fff;
+    box-shadow:0 0 10px rgba(0,242,254,.4);
+  }
+  .selected-dates{
+    margin-top:14px; font-size:12px; color:#9fe0e6;
+    display:flex; flex-wrap:wrap; gap:8px;
+  }
+  .selected-dates .tag{
+    border:1px solid rgba(0,242,254,.4); padding:4px 9px; border-radius:20px;
+  }
+  .hint{ margin-top:10px; font-size:11px; color:#5fb9c2; }
+
+  .confirm-btn{
+    margin-top:20px;
+    width:100%;
+    padding:16px;
+    background:transparent;
+    border:1px solid rgba(0,242,254,.35);
+    color:#7fdfe8;
+    font-family:"Helvetica Neue", Arial, sans-serif;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    font-size:13px;
+    border-radius:2px;
+    cursor:not-allowed;
+    opacity:.5;
+    transition:all .35s ease;
+  }
+  .confirm-btn.ready{
+    cursor:pointer;
+    opacity:1;
+    color:#fff;
+    border-color:var(--cyan);
+    box-shadow:0 0 18px rgba(0,242,254,.35);
+  }
+  .confirm-btn.ready:hover{
+    box-shadow:0 0 30px rgba(0,242,254,.6);
+    background:rgba(0,242,254,.08);
+  }
+  .confirm-msg{
+    margin-top:16px; font-size:13px; text-align:center;
+    color:#fff; text-shadow:0 0 14px rgba(0,242,254,.6);
+    display:none;
+  }
+  .confirm-msg.show{ display:block; animation:pulseGlow 2.2s infinite; }
+
+  footer{
+    text-align:center; padding:8vh 6vw 6vh; font-size:11px;
+    color:#3f6e73; letter-spacing:.08em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+  }
+
+  @media (min-width: 760px){
+    .point-card{ max-width:440px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HERO — L'ANAMNESI
+============================================================ -->
+<section id="hero">
+  <canvas id="ecg-canvas"></canvas>
+  <div class="vitals-hud">
+    <span><span class="dot" id="pulseDot"></span> HR <strong>80</strong> bpm</span>
+    <span class="vital-sep">|</span>
+    <span>SpO2 <strong>98</strong>%</span>
+  </div>
+  <div class="hero-inner">
+    <span class="eyebrow">Referto clinico · Esito definitivo</span>
+    <h1 class="hero-title neon-cyan-text">
+      Dott.ssa [NOME], la diagnosi è ufficiale:
+      <span class="highlight neon-red-text">TI SEI LAUREATA! 🎓</span>
+    </h1>
+    <!-- Sostituisci l'URL qui sotto con quello della tua foto (va bene
+         anche un PNG con sfondo trasparente: verrà mostrata intera,
+         senza ritagliare la sagoma, con un bagliore ciano dietro).
+         IMPORTANTE: una volta inserita la foto, cancella anche il
+         testo segnaposto "INSERISCI_URL_FOTO_HERO" qui sotto, altrimenti
+         resterà scritto sopra l'immagine. -->
+    <div class="hero-photo-box" style="--hero-photo:url('INSERISCI_URL_FOTO_HERO')">INSERISCI_URL_FOTO_HERO</div>
+    <p class="hero-sub">PARAMETRI VITALI: STABILI &nbsp;·&nbsp; ANSIA DA TESI: RISOLTA &nbsp;·&nbsp; FELICITÀ: FUORI SCALA</p>
+    <div class="scroll-cue"><span class="line"></span>SCORRI PER L'ANAMNESI</div>
+  </div>
+</section>
+
+<!-- ============================================================
+     DNA — IL LEGAME (sticky + scroll-driven rotation)
+============================================================ -->
+<section id="dna-section">
+  <!-- Livello 1: il canvas 3D, resta fisso (sticky) mentre si scorre -->
+  <div id="dna-sticky">
+    <div id="dna-canvas-wrap"></div>
+    <div class="dna-vignette"></div>
+
+    <div class="dna-heading" id="dna-heading-default">
+      <span class="eyebrow">Sequenziamento del legame</span>
+      <h2>Il nostro DNA condiviso</h2>
+    </div>
+  </div>
+
+  <!-- Livello 2: il testo, scorre normalmente e definisce la durata
+       reale della sezione. Ogni slot occupa lo spazio di uno
+       schermo intero (o più), così i blocchi non si accavallano. -->
+  <div id="dna-text-layer">
+
+    <div class="dna-slot spacer"></div>
+
+    <!-- Punto 1 -->
+    <div class="dna-slot" data-align="left">
+      <div class="point-card" data-point="1">
+        <div class="num">REFERTO 01 / 03</div>
+        <h3>Anno Primo — La Diagnosi di Amicizia</h3>
+        <p class="aneddoto">Ci siamo conosciute il primo giorno, terrorizzate dalla stessa lezione di anatomia. Da quel momento, ogni esame superato insieme è stato un piccolo miracolo di caffeina e complicità.</p>
+        <div class="photo-box" style="background-image:url('INSERISCI_URL_FOTO_1')">INSERISCI_URL_FOTO_1</div>
+      </div>
+    </div>
+
+    <!-- Punto 2 -->
+    <div class="dna-slot" data-align="right">
+      <div class="point-card" data-point="2">
+        <div class="num">REFERTO 02 / 03</div>
+        <h3>Anno Terzo — Terapia d'Urto (di Risate)</h3>
+        <p class="aneddoto">Notti intere sui libri, crisi di nervi curate a vino e serie tv, e la certezza che qualunque cosa succedesse, ci saremmo salvate a vicenda dal panico da tirocinio.</p>
+        <div class="photo-box" style="background-image:url('INSERISCI_URL_FOTO_2')">INSERISCI_URL_FOTO_2</div>
+      </div>
+    </div>
+
+    <!-- Punto 3 -->
+    <div class="dna-slot" data-align="left">
+      <div class="point-card" data-point="3">
+        <div class="num">REFERTO 03 / 03</div>
+        <h3>Oggi — Prognosi: Eccellente</h3>
+        <p class="aneddoto">Oggi non festeggiamo solo un titolo, ma tutte le notti insonni, le paure superate e la dottoressa incredibile che sei diventata. Fiera di te, per sempre.</p>
+        <div class="photo-box" style="background-image:url('INSERISCI_URL_FOTO_3')">INSERISCI_URL_FOTO_3</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     PRESCRIZIONE FINALE — IL REGALO
+============================================================ -->
+<section id="prescrizione">
+  <div class="rx-sheet neon-border-cyan">
+    <div class="rx-head">
+      <div>
+        <span class="eyebrow">Ricetta medica digitale</span>
+        <div class="rx-title">La Prescrizione</div>
+      </div>
+      <div class="rx-id">RX‑2026‑LAUREA<br>rep. n° 001</div>
+    </div>
+
+    <div class="rx-body">
+      <p>Si prescrive, con effetto immediato, una terapia intensiva a base di riposo, risate e amicizia da somministrare lontano da qui.</p>
+      <div class="rx-line"><span>Diagnosi</span><span>Dottoressa in Medicina</span></div>
+      <div class="rx-line"><span>Terapia</span><span>Da svelare al tocco</span></div>
+      <div class="rx-line"><span>Posologia</span><span>3 persone, 1 valigia</span></div>
+      <div class="rx-line"><span>Validità</span><span>Data da destinarsi</span></div>
+    </div>
+
+    <div class="stamp-zone">
+      <button class="stamp-btn" id="stampBtn">TOP SECRET<br>Tocca per<br>diagnosticare la cura</button>
+    </div>
+
+    <div class="reveal-zone" id="revealZone">
+      <div class="reveal-title neon-cyan-text">La cura è: un viaggio! ✈️</div>
+      <p class="reveal-sub">Noi tre, una valigia, e una data ancora da scrivere. Scegli fino a 3 giorni che ti andrebbero bene: troveremo il modo di farli coincidere.</p>
+
+      <div class="cal-wrap">
+        <div class="cal-header">
+          <button id="prevMonth" aria-label="Mese precedente">‹</button>
+          <span id="calLabel">—</span>
+          <button id="nextMonth" aria-label="Mese successivo">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="selected-dates" id="selectedDates"></div>
+        <div class="hint">Seleziona fino a 3 date · <span id="countHint">0/3</span></div>
+      </div>
+
+      <button class="confirm-btn" id="confirmBtn" disabled>Confermo la terapia</button>
+      <div class="confirm-msg" id="confirmMsg">✔ Terapia confermata. Preparati alla valigia, Dottoressa.</div>
+    </div>
+  </div>
+</section>
+
+<footer>MADE WITH ♥ &amp; TROPPA CAFFEINA — PER LA MIGLIOR DOTTORESSA DI SEMPRE</footer>
+
+<!-- ============================================================
+     LIBRERIE
+============================================================ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<script>
+/* ============================================================
+   1. ECG DI SFONDO — monitor da sala operatoria realistico
+   - Onda PQRST generata matematicamente (somma di gaussiane),
+     non un semplice zig-zag: forma clinicamente riconoscibile.
+   - Ritmo reale: 80 bpm -> un battito ogni 0.75s (RR interval).
+   - Effetto "sweep" da monitor vero: il tracciato avanza con un
+     cursore luminoso e una piccola scia vuota subito davanti,
+     esattamente come sugli schermi dei parametri vitali in sala
+     operatoria (non è uno scroll continuo, è un vero "giro").
+   - Il pallino HR nell'HUD lampeggia in sync con l'onda R.
+============================================================ */
+(function ecg(){
+  const canvas = document.getElementById('ecg-canvas');
+  const ctx = canvas.getContext('2d');
+  const pulseDot = document.getElementById('pulseDot');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const BPM = 80;
+  const RR = 60 / BPM; // secondi per battito (0.75s)
+
+  let w, h, dpr, buffer, bufLen, cursor = 0, lastCol = -1;
+
+  function resize(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = canvas.clientWidth = canvas.parentElement.clientWidth;
+    h = canvas.clientHeight = canvas.parentElement.clientHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    bufLen = Math.max(1, Math.ceil(w));
+    buffer = new Array(bufLen).fill(null);
+    cursor = 0; lastCol = -1;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Onda PQRST realistica: somma di gaussiane, phase in [0,1)
+  function ecgValue(phase){
+    function g(amp, mu, sigma){
+      const d = phase - mu;
+      return amp * Math.exp(-(d*d) / (2*sigma*sigma));
+    }
+    let v = 0;
+    v += g(0.14, 0.140, 0.020);   // onda P
+    v += g(-0.12, 0.232, 0.007);  // Q
+    v += g(1.00, 0.250, 0.009);   // R (spike principale)
+    v += g(-0.32, 0.266, 0.010);  // S
+    v += g(0.30, 0.420, 0.045);   // onda T
+    return v;
+  }
+
+  const GAP_PX = 9; // scia vuota subito davanti al cursore (effetto monitor)
+  const pxPerSec = () => bufLen / (RR * 4.4); // ~4 battiti visibili insieme
+
+  function step(now){
+    const tSec = now / 1000;
+
+    if(!reduced){
+      const target = cursor + pxPerSec() * (1/60); // avanzamento stimato per frame
+      const targetCol = Math.floor(target);
+      for(let col = lastCol + 1; col <= targetCol; col++){
+        const idx = ((col % bufLen) + bufLen) % bufLen;
+        const phase = (tSec % RR) / RR;
+        buffer[idx] = ecgValue(phase);
+        for(let g=1; g<=GAP_PX; g++){
+          buffer[(idx+g) % bufLen] = null;
+        }
+      }
+      lastCol = targetCol;
+      cursor = target % bufLen;
+    }
+
+    draw();
+    requestAnimationFrame(step);
+  }
+
+  function drawGrid(){
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,242,254,0.05)';
+    ctx.lineWidth = 1;
+    const step = 30;
+    for(let x=0; x<w; x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+    for(let y=0; y<h; y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    drawGrid();
+
+    const baseline = h*0.58;
+    const amp = h*0.32;
+
+    ctx.lineWidth = 2.2;
+    ctx.strokeStyle = '#00f2fe';
+    ctx.shadowColor = '#00f2fe';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    let drawing = false;
+    for(let x=0; x<bufLen; x++){
+      const v = buffer[x];
+      if(v===null){ drawing = false; continue; }
+      const y = baseline - v*amp;
+      if(!drawing){ ctx.moveTo(x,y); drawing = true; }
+      else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+
+    // punto luminoso in testa al tracciato, come il cursore di un monitor vero
+    const idx = ((Math.floor(cursor)-1) % bufLen + bufLen) % bufLen;
+    const v = buffer[idx];
+    if(v !== null){
+      const cy = baseline - v*amp;
+      ctx.beginPath();
+      ctx.fillStyle = '#eafffe';
+      ctx.shadowBlur = 22;
+      ctx.arc(cursor, cy, 3, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  requestAnimationFrame(step);
+
+  // Il pallino HR dell'HUD "batte" esattamente al ritmo del monitor
+  if(pulseDot && !reduced){
+    setInterval(() => {
+      pulseDot.classList.add('beat');
+      setTimeout(() => pulseDot.classList.remove('beat'), 140);
+    }, RR * 1000);
+  }
+})();
+
+/* ============================================================
+   1bis. Verifica preliminare
+   Se Three.js non è disponibile (CDN lento/bloccato), non blocco
+   la pagina: nascondo semplicemente lo strato 3D e continuo.
+============================================================ */
+window.__dnaReady = (typeof THREE !== 'undefined');
+if(!window.__dnaReady){
+  console.warn('Three.js non è stato caricato: il DNA 3D non verrà mostrato, ma il resto della pagina funziona normalmente.');
+}
+</script>
+
+<script>
+/* ============================================================
+   2. DNA 3D — Three.js
+   (script indipendente: se qualcosa qui va storto, il pulsante
+   del timbro e il calendario più sotto restano comunque attivi)
+============================================================ */
+if (window.__dnaReady) {
+try {
+window.DNA = (function(){
+  const wrap = document.getElementById('dna-canvas-wrap');
+  const scene = new THREE.Scene();
+
+  /* ============================================================
+     VISTA ESTERNA CON ZOOM PROGRESSIVO
+     La camera guarda il DNA da fuori (non più "dall'interno").
+     All'inizio della sezione è più vicina (zoom-in, elica grande
+     e dettagliata), poi si allontana gradualmente (zoom-out)
+     mentre si scrolla verso il basso, rivelando l'elica intera.
+     Nel frattempo l'elica ruota su se stessa seguendo lo scroll.
+  ============================================================ */
+  const camera = new THREE.PerspectiveCamera(45, wrap.clientWidth/wrap.clientHeight, 0.1, 100);
+  const ZOOM_IN = 6.2;   // distanza camera a inizio sezione (più vicina)
+  const ZOOM_OUT = 15.5; // distanza camera a fine sezione (più lontana)
+  camera.position.set(0, 0, ZOOM_IN);
+  camera.lookAt(0,0,0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+  wrap.appendChild(renderer.domElement);
+
+  const group = new THREE.Group();
+  scene.add(group);
+
+  const HEIGHT = 13;
+  const TURNS = 4.6;
+  const POINTS_PER_STRAND = 200;
+  const RADIUS = 2.1;
+
+  function buildStrand(colorHex, phase){
+    const positions = [];
+    for(let i=0;i<=POINTS_PER_STRAND;i++){
+      const t = i/POINTS_PER_STRAND;
+      const angle = t * Math.PI * 2 * TURNS + phase;
+      const y = (t - 0.5) * HEIGHT;
+      const x = Math.cos(angle) * RADIUS;
+      const z = Math.sin(angle) * RADIUS;
+      positions.push(x, y, z);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+    const line = new THREE.Line(
+      geo,
+      new THREE.LineBasicMaterial({ color: colorHex, transparent:true, opacity:0.9 })
+    );
+
+    const pGeo = geo.clone();
+    const points = new THREE.Points(
+      pGeo,
+      new THREE.PointsMaterial({ color: colorHex, size: 0.16, transparent:true, opacity:0.95, sizeAttenuation:true })
+    );
+
+    return { line, points, positions };
+  }
+
+  const strandA = buildStrand(0x00f2fe, 0);
+  const strandB = buildStrand(0xff2a5f, Math.PI);
+  group.add(strandA.line, strandA.points, strandB.line, strandB.points);
+
+  // "pioli" della doppia elica (rungs)
+  const rungGeo = new THREE.BufferGeometry();
+  const rungPositions = [];
+  const RUNG_COUNT = 60;
+  for(let i=0;i<=RUNG_COUNT;i++){
+    const t = i/RUNG_COUNT;
+    const angle = t * Math.PI * 2 * TURNS;
+    const y = (t - 0.5) * HEIGHT;
+    const x1 = Math.cos(angle) * RADIUS, z1 = Math.sin(angle) * RADIUS;
+    const x2 = Math.cos(angle+Math.PI) * RADIUS, z2 = Math.sin(angle+Math.PI) * RADIUS;
+    rungPositions.push(x1,y,z1, x2,y,z2);
+  }
+  rungGeo.setAttribute('position', new THREE.Float32BufferAttribute(rungPositions, 3));
+  const rungs = new THREE.LineSegments(
+    rungGeo,
+    new THREE.LineBasicMaterial({ color:0x6fe9f2, transparent:true, opacity:0.26 })
+  );
+  group.add(rungs);
+
+  // polvere luminosa ambientale attorno all'elica
+  const DUST_COUNT = 120;
+  const dustPositions = [];
+  for(let i=0;i<DUST_COUNT;i++){
+    const y = (Math.random()-0.5) * HEIGHT * 1.1;
+    const angle = Math.random() * Math.PI * 2;
+    const r = RADIUS * (1.3 + Math.random()*1.6);
+    dustPositions.push(Math.cos(angle)*r, y, Math.sin(angle)*r);
+  }
+  const dustGeo = new THREE.BufferGeometry();
+  dustGeo.setAttribute('position', new THREE.Float32BufferAttribute(dustPositions, 3));
+  const dust = new THREE.Points(
+    dustGeo,
+    new THREE.PointsMaterial({ color:0x8fefe0, size:0.05, transparent:true, opacity:0.4, sizeAttenuation:true })
+  );
+  group.add(dust);
+
+  // luci ambientali soffuse per dare volume ai punti
+  scene.add(new THREE.AmbientLight(0x224455, 1.2));
+  const pl1 = new THREE.PointLight(0x00f2fe, 2.2, 20); pl1.position.set(4,4,6); scene.add(pl1);
+  const pl2 = new THREE.PointLight(0xff2a5f, 2.2, 20); pl2.position.set(-4,-4,6); scene.add(pl2);
+
+  function resize(){
+    const w = wrap.clientWidth, h = wrap.clientHeight;
+    camera.aspect = w/h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w,h);
+  }
+  window.addEventListener('resize', resize);
+
+  let targetProgress = 0;
+  let currentProgress = 0;
+
+  function setProgress(p){ targetProgress = Math.min(1, Math.max(0, p)); }
+
+  function setIntensity(activeIndex){
+    // activeIndex: 0,1,2 -> enfatizza alternando ciano/rosso
+    const cyanBoost = activeIndex % 2 === 0 ? 1.4 : 0.6;
+    const redBoost   = activeIndex % 2 === 0 ? 0.6 : 1.4;
+    strandA.line.material.opacity = Math.min(1, 0.55 + cyanBoost*0.3);
+    strandA.points.material.opacity = Math.min(1, 0.55 + cyanBoost*0.3);
+    strandB.line.material.opacity = Math.min(1, 0.55 + redBoost*0.3);
+    strandB.points.material.opacity = Math.min(1, 0.55 + redBoost*0.3);
+    pl1.intensity = 1.4 + cyanBoost;
+    pl2.intensity = 1.4 + redBoost;
+  }
+
+  function animate(){
+    currentProgress += (targetProgress - currentProgress) * 0.09;
+
+    // rotazione continua su se stesso, legata 1:1 allo scroll
+    group.rotation.y = currentProgress * Math.PI * 5.2;
+    group.rotation.z = Math.sin(currentProgress * Math.PI) * 0.05;
+
+    // zoom progressivo: parte vicino (dettaglio), si allontana scendendo
+    camera.position.z = ZOOM_IN + (ZOOM_OUT - ZOOM_IN) * currentProgress;
+    camera.lookAt(0,0,0);
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  return { setProgress, setIntensity, resize };
+})();
+} catch(e) {
+  console.error('DNA 3D: errore durante l\'inizializzazione, la pagina continua senza il modello 3D.', e);
+  window.DNA = null;
+}
+} // fine if(window.__dnaReady)
+</script>
+
+<script>
+/* ============================================================
+   3a. SCROLL-DRIVEN: rotazione DNA (solo se il DNA è disponibile)
+   Usa GSAP ScrollTrigger se presente, altrimenti un listener
+   di scroll semplice come rete di sicurezza.
+============================================================ */
+try {
+  if (window.DNA && typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.create({
+      trigger: "#dna-section",
+      start: "top top",
+      end: "bottom bottom",
+      scrub: true,
+      onUpdate: (self) => {
+        window.DNA.setProgress(self.progress);
+      }
+    });
+  } else if (window.DNA) {
+    // rete di sicurezza senza GSAP: calcola il progresso al volo sullo scroll
+    const dnaSection = document.getElementById('dna-section');
+    window.addEventListener('scroll', () => {
+      const rect = dnaSection.getBoundingClientRect();
+      const total = dnaSection.offsetHeight - window.innerHeight;
+      const progress = Math.min(1, Math.max(0, -rect.top / total));
+      window.DNA.setProgress(progress);
+    }, { passive:true });
+  }
+} catch(e){ console.error('Scroll-binding DNA non riuscito:', e); }
+
+/* ============================================================
+   3b. EVIDENZIAZIONE DEI 3 PUNTI SALIENTI
+   Indipendente da Three.js/GSAP: usa IntersectionObserver,
+   quindi funziona sempre anche se il 3D non si carica.
+============================================================ */
+(function highlightPoints(){
+  const cards = Array.from(document.querySelectorAll('.point-card'));
+  const dnaHeading = document.getElementById('dna-heading-default');
+  if (!cards.length) return;
+
+  function activate(idx){
+    cards.forEach(c => c.classList.remove('active'));
+    cards[idx].classList.add('active');
+    if (window.DNA && window.DNA.setIntensity) window.DNA.setIntensity(idx);
+    if (dnaHeading) dnaHeading.style.opacity = '0';
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const idx = cards.indexOf(entry.target);
+        if (idx > -1) activate(idx);
+      } else {
+        entry.target.classList.remove('active');
+      }
+    });
+  }, { threshold: 0, rootMargin: "-38% 0px -38% 0px" });
+
+  cards.forEach(card => observer.observe(card));
+})();
+</script>
+
+<script>
+/* ============================================================
+   4. TIMBRO "TOP SECRET" -> RIVELA IL REGALO
+   Script indipendente: funziona sempre, a prescindere da
+   Three.js/GSAP.
+============================================================ */
+try {
+  const stampBtn = document.getElementById('stampBtn');
+  const revealZone = document.getElementById('revealZone');
+
+  stampBtn.addEventListener('click', () => {
+    stampBtn.classList.add('hidden');
+    setTimeout(() => {
+      revealZone.classList.add('show');
+      revealZone.scrollIntoView({ behavior:'smooth', block:'center' });
+    }, 350);
+  }, { once:true });
+} catch(e){ console.error('Errore sul pulsante timbro:', e); }
+</script>
+
+<script>
+/* ============================================================
+   5. CALENDARIO INTERATTIVO — selezione fino a 3 date
+   Script indipendente, nessuna dipendenza esterna.
+============================================================ */
+(function calendar(){
+  const grid = document.getElementById('calGrid');
+  const label = document.getElementById('calLabel');
+  const selectedWrap = document.getElementById('selectedDates');
+  const countHint = document.getElementById('countHint');
+  const confirmBtn = document.getElementById('confirmBtn');
+  const confirmMsg = document.getElementById('confirmMsg');
+
+  const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+  const DOW = ["L","M","M","G","V","S","D"];
+
+  let today = new Date();
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth();
+  const selected = new Set(); // "YYYY-MM-DD"
+
+  function render(){
+    label.textContent = `${MESI[viewMonth]} ${viewYear}`;
+    grid.innerHTML = '';
+    DOW.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'dow'; el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    const firstDay = new Date(viewYear, viewMonth, 1);
+    let startOffset = (firstDay.getDay() + 6) % 7; // lunedì = 0
+    const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+
+    for(let i=0;i<startOffset;i++){
+      const el = document.createElement('div');
+      el.className = 'cal-day empty';
+      grid.appendChild(el);
+    }
+
+    for(let d=1; d<=daysInMonth; d++){
+      const el = document.createElement('div');
+      el.className = 'cal-day';
+      el.textContent = d;
+      const key = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      if(selected.has(key)) el.classList.add('selected');
+      el.addEventListener('click', () => toggleDate(key, el));
+      grid.appendChild(el);
+    }
+  }
+
+  function toggleDate(key, el){
+    if(selected.has(key)){
+      selected.delete(key);
+      el.classList.remove('selected');
+    } else {
+      if(selected.size >= 3) return;
+      selected.add(key);
+      el.classList.add('selected');
+    }
+    updateSummary();
+  }
+
+  function updateSummary(){
+    selectedWrap.innerHTML = '';
+    selected.forEach(key => {
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      const [y,m,d] = key.split('-');
+      tag.textContent = `${d}/${m}/${y}`;
+      selectedWrap.appendChild(tag);
+    });
+    countHint.textContent = `${selected.size}/3`;
+    if(selected.size === 3){
+      confirmBtn.classList.add('ready');
+      confirmBtn.disabled = false;
+    } else {
+      confirmBtn.classList.remove('ready');
+      confirmBtn.disabled = true;
+    }
+  }
+
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    viewMonth--; if(viewMonth<0){ viewMonth=11; viewYear--; } render();
+  });
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    viewMonth++; if(viewMonth>11){ viewMonth=0; viewYear++; } render();
+  });
+
+  confirmBtn.addEventListener('click', () => {
+    if(confirmBtn.disabled) return;
+    confirmMsg.classList.add('show');
+    confirmBtn.textContent = "Terapia confermata ✔";
+    confirmBtn.disabled = true;
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
